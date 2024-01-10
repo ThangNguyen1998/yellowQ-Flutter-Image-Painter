@@ -581,10 +581,13 @@ class ImagePainterState extends State<ImagePainter> {
                   builder: (context, child) {
                     return InteractiveViewer(
                       transformationController: _transformationController,
-                      maxScale: 2.4,
+                      maxScale: _controller.onTextUpdateMode ? 3.5 : 2.4,
                       minScale: 1,
                       panEnabled: _controller.mode == PaintMode.none,
-                      scaleEnabled: widget.isScalable!,
+                      scaleEnabled: _controller.onTextUpdateMode
+                          ? false
+                          : widget.isScalable!,
+                      onInteractionStart: _onPanStart,
                       onInteractionUpdate: _scaleUpdateGesture,
                       onInteractionEnd: _scaleEndGesture,
                       child: CustomPaint(
@@ -677,22 +680,48 @@ class ImagePainterState extends State<ImagePainter> {
     }
   }
 
+  Offset? _initialFocalPoint;
+  void _onPanStart(ScaleStartDetails onUpdate) {
+    _initialFocalPoint = onUpdate.localFocalPoint;
+    print('on start, ${_initialFocalPoint}');
+  }
+
   ///Fires while user is interacting with the screen to record painting.
   void _scaleUpdateGesture(ScaleUpdateDetails onUpdate) {
     final _zoomAdjustedOffset =
         _transformationController.toScene(onUpdate.localFocalPoint);
     _controller.setInProgress(true);
+    const double dragThreshold = 10.0; // Adjust this value as needed
+
+    if (_controller.onTextUpdateMode) {
+      if (onUpdate.pointerCount > 1) {
+        print('pointerCount ${onUpdate.scale}, ${_controller.currentTextSize}');
+        if (_controller.textScaleFactor >= 0.3 &&
+            _controller.textScaleFactor <= 8) {
+          _controller.setTextScaleFactor(
+              _controller.textScaleFactor + (onUpdate.scale - 1.0));
+          print(
+              'textscale ${_controller.currentTextSize}, ${_controller.textScaleFactor}');
+        }
+      } else {
+        if (_initialFocalPoint == null) return;
+        final _currentFocalPoint = onUpdate.localFocalPoint;
+        print('onUpdate, ${_currentFocalPoint}');
+        double distance = (_currentFocalPoint - _initialFocalPoint!).distance;
+        if (distance > dragThreshold) {
+          _controller.paintHistory
+              .lastWhere((element) => element.mode == PaintMode.text)
+              .offsets = [_zoomAdjustedOffset];
+        }
+      }
+      return;
+    }
     if (_controller.start == null) {
       _controller.setStart(_zoomAdjustedOffset);
     }
     _controller.setEnd(_zoomAdjustedOffset);
     if (_controller.mode == PaintMode.freeStyle) {
       _controller.addOffsets(_zoomAdjustedOffset);
-    }
-    if (_controller.onTextUpdateMode) {
-      _controller.paintHistory
-          .lastWhere((element) => element.mode == PaintMode.text)
-          .offsets = [_zoomAdjustedOffset];
     }
   }
 

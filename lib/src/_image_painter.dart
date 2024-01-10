@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/gestures.dart';
 
 import 'package:flutter/material.dart' hide Image;
 
@@ -17,6 +18,7 @@ class DrawImage extends CustomPainter {
 
   //Controller is a listenable with all of the paint details.
   late Controller _controller;
+  Rect? _textRect; // To store the position and size of the text
 
   ///Constructor for the canvas
   DrawImage({
@@ -94,10 +96,10 @@ class DrawImage extends CustomPainter {
           break;
         case PaintMode.text:
           final textSpan = TextSpan(
-            text: item.text,
+            text: '${item.text}',
             style: TextStyle(
               color: _painter.color,
-              fontSize: 6 * _painter.strokeWidth,
+              fontSize: _controller.currentTextSize,
               fontWeight: FontWeight.bold,
             ),
           );
@@ -112,7 +114,13 @@ class DrawImage extends CustomPainter {
                   size.height / 2 - textPainter.height / 2)
               : Offset(_offset[0]!.dx - textPainter.width / 2,
                   _offset[0]!.dy - textPainter.height / 2);
+
+          _textRect = Offset(textOffset.dx, textOffset.dy) & textPainter.size;
+
           textPainter.paint(canvas, textOffset);
+          bool isTextHit(Offset position) =>
+              _textRect?.contains(position) ?? false;
+
           break;
         default:
       }
