@@ -8,7 +8,6 @@ class Controller extends ChangeNotifier {
   late PaintMode _mode;
   late String _text;
   late bool _fill;
-  late double _textScaleFactor = 1.0;
 
   final List<Offset?> _offsets = [];
 
@@ -23,10 +22,6 @@ class Controller extends ChangeNotifier {
     ..color = _color
     ..strokeWidth = _strokeWidth * _strokeMultiplier
     ..style = shouldFill ? PaintingStyle.fill : PaintingStyle.stroke;
-
-  double get textScaleFactor => _textScaleFactor;
-  double get currentTextSize =>
-      (_textScaleFactor * 6 * _strokeWidth).clamp(10, 60);
 
   PaintMode get mode => _mode;
 
@@ -60,14 +55,12 @@ class Controller extends ChangeNotifier {
     PaintMode mode = PaintMode.freeStyle,
     String text = '',
     bool fill = false,
-    double textScaleFactor = 1.0,
   }) {
     _strokeWidth = strokeWidth;
     _color = color;
     _mode = mode;
     _text = text;
     _fill = fill;
-    _textScaleFactor = textScaleFactor;
   }
 
   void addPaintInfo(PaintInfo paintInfo) {
@@ -91,11 +84,6 @@ class Controller extends ChangeNotifier {
 
   void setStrokeWidth(double val) {
     _strokeWidth = val;
-    notifyListeners();
-  }
-
-  void setTextScaleFactor(double val) {
-    _textScaleFactor = val.clamp(0.3, 8);
     notifyListeners();
   }
 
@@ -149,7 +137,6 @@ class Controller extends ChangeNotifier {
     _mode = mode ?? _mode;
     _text = text ?? _text;
     _strokeMultiplier = strokeMultiplier ?? _strokeMultiplier;
-    _textScaleFactor = textScaleFactor ?? _textScaleFactor;
     notifyListeners();
   }
 
